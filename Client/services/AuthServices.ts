@@ -3,7 +3,7 @@ import * as SecureStore from 'expo-secure-store';
 import { jwtDecode } from 'jwt-decode';
 
 // Backend base URL
-const BASE_URL = 'http://localhost:3000';
+const BASE_URL = 'https://assessment-task-nine.vercel.app';
 
 interface JwtPayload {
   exp: number;
