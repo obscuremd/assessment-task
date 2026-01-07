@@ -36,7 +36,7 @@ export default function Home() {
           setLoggingOut(true);
           try {
             await logout();
-            router.replace('/auth/login'); // redirect to login
+            router.replace('/auth/welcome'); // redirect to login
           } catch (err) {
             Alert.alert('Error', 'Failed to logout. Please try again.');
           } finally {
