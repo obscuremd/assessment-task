@@ -2,7 +2,6 @@ import { Request, Response, Router } from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
-import { connectMongoDb } from "../utils/mongoDb";
 import { Otp } from "../Model/Otp.Model";
 import { User } from "../Model/User.Model";
 
@@ -10,14 +9,14 @@ const router = Router();
 
 router.post("/verify-otp", async (req: Request, res: Response) => {
   try {
-    const { purpose, code, email, password, fullname, d_o_b, gender } =
-      req.body;
+    let { purpose, code, email, password, fullname, d_o_b, gender } = req.body;
 
-    // ---------- BASIC VALIDATION ----------
     if (!email || !code || !purpose) {
       res.status(400).json({ message: "Missing required fields" });
       return;
     }
+
+    email = email.toLowerCase(); // convert email to lowercase
 
     if (!["login", "register"].includes(purpose)) {
       res.status(400).json({ message: "Invalid purpose" });
@@ -36,7 +35,6 @@ router.post("/verify-otp", async (req: Request, res: Response) => {
       return;
     }
 
-    // Remove OTP after successful validation
     await Otp.deleteMany({ email });
 
     // ---------- REGISTER ----------
@@ -63,10 +61,7 @@ router.post("/verify-otp", async (req: Request, res: Response) => {
       });
 
       const token = jwt.sign(
-        {
-          id: newUser._id,
-          email: newUser.email,
-        },
+        { id: newUser._id, email: newUser.email },
         process.env.JWT_SECRET as string,
         { expiresIn: "2d" }
       );
@@ -92,10 +87,7 @@ router.post("/verify-otp", async (req: Request, res: Response) => {
       }
 
       const token = jwt.sign(
-        {
-          id: user._id,
-          email: user.email,
-        },
+        { id: user._id, email: user.email },
         process.env.JWT_SECRET as string,
         { expiresIn: "2d" }
       );
@@ -103,11 +95,7 @@ router.post("/verify-otp", async (req: Request, res: Response) => {
       res.status(200).json({
         message: "Login successful",
         token,
-        user: {
-          id: user._id,
-          email: user.email,
-          fullname: user.fullname,
-        },
+        user: { id: user._id, email: user.email, fullname: user.fullname },
       });
       return;
     }

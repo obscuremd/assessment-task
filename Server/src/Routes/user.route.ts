@@ -1,7 +1,6 @@
 import { Router, Request, Response } from "express";
 import bcrypt from "bcrypt";
 
-import { connectMongoDb } from "../utils/mongoDb";
 import { User } from "../Model/User.Model";
 import { sendMail } from "../utils/mailService";
 import { Otp } from "../Model/Otp.Model";
@@ -10,12 +9,14 @@ const router = Router();
 
 router.post("/auth", async (req: Request, res: Response) => {
   try {
-    const { purpose, email, password } = req.body;
+    let { purpose, email, password } = req.body;
 
     if (!email || !purpose) {
       res.status(400).json({ message: "Missing required fields" });
       return;
     }
+
+    email = email.toLowerCase(); // convert email to lowercase
 
     const user = await User.findOne({ email });
 
@@ -46,7 +47,6 @@ router.post("/auth", async (req: Request, res: Response) => {
 
     // Generate OTP
     const code = Math.floor(100000 + Math.random() * 900000);
-
     const subject =
       purpose === "login" ? "Your Login Code" : "Your Registration Code";
 

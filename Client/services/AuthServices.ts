@@ -11,15 +11,11 @@ interface JwtPayload {
 }
 
 interface RegisterParams {
-  username: string;
-  fullname: string;
   email: string;
-  phoneNumber: string;
-  profilePicture?: string;
-  coverPicture?: string;
-  bio?: string;
-  location?: string;
   password: string;
+  fullname: string;
+  d_o_b: number;
+  gender: string;
 }
 
 // ---------------- OTP REQUEST ----------------
@@ -96,31 +92,40 @@ export async function verifyOtp(
 }
 
 // ---------------- GET CURRENT USER ----------------
-export async function getUser() {
+export async function getUser(): Promise<{
+  authenticated: boolean;
+  user?: {
+    id: string;
+    email: string;
+  };
+}> {
   const token = await SecureStore.getItemAsync('UserToken');
-  if (!token) return { status: false };
+
+  if (!token) {
+    return { authenticated: false };
+  }
 
   try {
-    const decoded = jwtDecode<JwtPayload>(token);
+    const decoded = jwtDecode<JwtPayload & { id: string; email: string }>(token);
+
     const now = Math.floor(Date.now() / 1000);
+
+    // Token expired
     if (decoded.exp && decoded.exp < now) {
       await SecureStore.deleteItemAsync('UserToken');
-      return { status: false };
+      return { authenticated: false };
     }
 
-    const res = await axios.get(`${BASE_URL}/me`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    if (res.status === 200) {
-      return { status: true, user: res.data.user };
-    } else {
-      await SecureStore.deleteItemAsync('UserToken');
-      return { status: false };
-    }
-  } catch (err) {
+    return {
+      authenticated: true,
+      user: {
+        id: decoded.id,
+        email: decoded.email,
+      },
+    };
+  } catch (error) {
     await SecureStore.deleteItemAsync('UserToken');
-    return { status: false };
+    return { authenticated: false };
   }
 }
 
